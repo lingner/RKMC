@@ -25,6 +25,7 @@
   #include "Sinks/AESinkDirectSound.h"
 #elif defined(TARGET_ANDROID)
   #include "Sinks/AESinkAUDIOTRACK.h"
+  #include "Sinks/RKAESinkAUDIOTRACK.h"
 #elif defined(TARGET_RASPBERRY_PI)
   #include "Sinks/AESinkPi.h"
   #include "Sinks/AESinkALSA.h"
@@ -104,7 +105,10 @@ IAESink *CAESinkFactory::TrySink(std::string &driver, std::string &device, AEAud
     if (driver == "DIRECTSOUND")
       sink = new CAESinkDirectSound();
 #elif defined(TARGET_ANDROID)
-    sink = new CAESinkAUDIOTRACK();
+    if(
+        (sink = new CRKAESinkAUDIOTRACK()) || 
+        (sink = new CAESinkAUDIOTRACK())
+       );
 #elif defined(TARGET_RASPBERRY_PI)
   if (driver == "PI")
     sink = new CAESinkPi();

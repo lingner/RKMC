@@ -3,7 +3,7 @@
 ![Kodi logo](https://raw.githubusercontent.com/xbmc/xbmc-forum/master/xbmc/images/logo-sbs-black.png)
 # Kodi Home Theater Software
 
-**Welcome to Kodi!**
+**Welcome to RKMC!**
 
 Kodi is an award-winning free and open source (GPL) software media player and
 entertainment hub for digital media. Kodi is available for multiple platforms.

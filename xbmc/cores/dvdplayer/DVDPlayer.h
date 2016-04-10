@@ -473,6 +473,7 @@ protected:
   friend class OMXPlayerVideo;
   friend class OMXPlayerAudio;
 #endif
+  friend class CDVDPlayerVideoRK;
 
   struct SPlayerState
   {

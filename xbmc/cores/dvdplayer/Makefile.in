@@ -18,8 +18,6 @@ SRCS += DVDStreamInfo.cpp
 SRCS += DVDTSCorrection.cpp
 SRCS += Edl.cpp
 
-SRCS += DVDExComponentsRK/DVDMessageQueueEx.cpp
-
 LIB = DVDPlayer.a
 
 include @abs_top_srcdir@/Makefile.include

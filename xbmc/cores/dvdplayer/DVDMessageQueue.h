@@ -80,6 +80,7 @@ enum MsgQueueReturnCode
 };
 
 #define MSGQ_IS_ERROR(c)    (c < 0)
+#define DVDMESSAGE_LOCK_PRIORITY 10
 
 class CDVDMessageQueue
 {
@@ -105,6 +106,9 @@ public:
     int priority = 0;
     return Get(pMsg, iTimeoutInMilliSeconds, priority);
   }
+
+  MsgQueueReturnCode LockFirst(CDVDMsg** pMsg, unsigned int iTimeoutInMilliSeconds, int &priority);
+  MsgQueueReturnCode Pop();
 
   int GetDataSize() const               { return m_iDataSize; }
   int GetTimeSize() const;

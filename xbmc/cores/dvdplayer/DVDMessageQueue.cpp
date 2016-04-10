@@ -217,6 +217,97 @@ MsgQueueReturnCode CDVDMessageQueue::Get(CDVDMsg** pMsg, unsigned int iTimeoutIn
   return (MsgQueueReturnCode)ret;
 }
 
+MsgQueueReturnCode CDVDMessageQueue::LockFirst(CDVDMsg** pMsg, unsigned int iTimeoutInMilliSeconds, int &priority)
+{
+  CSingleLock lock(m_section);
+
+  *pMsg = NULL;
+
+  int ret = 0;
+
+  if (!m_bInitialized)
+  {
+    CLog::Log(LOGFATAL, "CDVDMessageQueueEx(%s)::Get MSGQ_NOT_INITIALIZED", m_owner.c_str());
+    return MSGQ_NOT_INITIALIZED;
+  }
+
+  if(m_list.empty() && m_bEmptied == false && priority == 0 && m_owner != "teletext" && m_owner != "rds")
+  {
+    CLog::Log(LOGWARNING, "CDVDMessageQueueEx(%s)::Get - asked for new data packet, with nothing available", m_owner.c_str());
+    m_bEmptied = true;
+  }
+
+  while (!m_bAbortRequest)
+  {
+    if(!m_list.empty() && m_list.back().priority >= priority && !m_bCaching)
+    {
+      DVDMessageListItem& item(m_list.back());
+      priority = item.priority;
+      
+      m_list.back().priority = DVDMESSAGE_LOCK_PRIORITY;
+      *pMsg = item.message->Acquire();
+      ret = MSGQ_OK;
+      break;
+    }
+    else if (!iTimeoutInMilliSeconds)
+    {
+      ret = MSGQ_TIMEOUT;
+      break;
+    }
+    else
+    {
+      m_hEvent.Reset();
+      lock.Leave();
+
+      // wait for a new message
+      if (!m_hEvent.WaitMSec(iTimeoutInMilliSeconds))
+        return MSGQ_TIMEOUT;
+
+      lock.Enter();
+    }
+  }
+
+  if (m_bAbortRequest) return MSGQ_ABORT;
+
+  return (MsgQueueReturnCode)ret;
+}
+
+MsgQueueReturnCode CDVDMessageQueue::Pop()
+{
+  CSingleLock lock(m_section);
+    
+  int ret = 0;
+   
+  if (!m_bInitialized)
+  {
+    CLog::Log(LOGFATAL, "CDVDMessageQueueEx(%s)::Get MSGQ_NOT_INITIALIZED", m_owner.c_str());
+    return MSGQ_NOT_INITIALIZED;
+  }
+
+  if(m_list.empty())
+    return MSGQ_INVALID_MSG;
+
+  DVDMessageListItem& item(m_list.back());
+  if (item.message->IsType(CDVDMsg::DEMUXER_PACKET))
+  {
+    DemuxPacket* packet = ((CDVDMsgDemuxerPacket*)item.message)->GetPacket();
+    if(packet)
+    {    
+      m_iDataSize -= packet->iSize;    
+      if     (packet->dts != DVD_NOPTS_VALUE)    
+        m_TimeBack = packet->dts;    
+      else if(packet->pts != DVD_NOPTS_VALUE)    
+        m_TimeBack = packet->pts;    
+    }    
+
+    if(m_bEmptied && m_iDataSize > 0)    
+      m_bEmptied = false;    
+  }
+  m_list.pop_back();
+  ret = MSGQ_OK;
+  
+  return (MsgQueueReturnCode)ret;
+}
 
 unsigned CDVDMessageQueue::GetPacketCount(CDVDMsg::Message type)
 {

@@ -22,11 +22,13 @@
 #include "cores/dvdplayer/DVDClock.h"
 #include "cores/VideoRenderers/RenderManager.h"
 #include "settings/MediaSettings.h"
-
+#include "settings/DisplaySettings.h"
 #include "utils/log.h"
 
 #define __MODULE_NAME__ "RKCodec"
+
 #define VC_BYPASS  0x00000100
+#define AV_CODEC_ID_H264MVC MKBETAG('M','V','C','C')
 
 CRKCodec::CRKCodec()
   : CThread("RKCodec"),
@@ -92,11 +94,11 @@ bool CRKCodec::OpenDecoder(CDVDStreamInfo &hints)
   m_displayInfo.eos = 0;
 
   /* detect mvc 3d */
-  /*if (AV_CODEC_ID_H264MVC == info.codec_tag)
+  if (AV_CODEC_ID_H264MVC == hints.codec_tag)
   {
     CLog::Log(LOGDEBUG,"s: OpenDecoder mvc detected!", __MODULE_NAME__);
-    info.stereo_mode = 1;
-  }*/
+    m_streamInfo.stereo_mode = 1;
+  }
 
   /* init and open rk codec */
   RK_RET ret = m_dll->RK_CodecInit(&m_streamInfo);
@@ -107,10 +109,23 @@ bool CRKCodec::OpenDecoder(CDVDStreamInfo &hints)
     /* error handle */
     CLog::Log(LOGDEBUG,"%s: OpenDecoder error err_ret = %u!", __MODULE_NAME__, ret);
     goto FAIL;
-  } 
+  }
+
+  /* record current resolution */
+  m_displayResolution = CRect(0, 0, 
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().iWidth,
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().iHeight);
+  CLog::Log(LOGDEBUG,"CRKCodec::kodi_opencodec() width = %d , height = %d, \
+                      sWidth = %d, sHeight = %d, bFullStreen = %d, pixfmt = %d", 
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().iWidth,
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().iHeight,
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().iScreenWidth,
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().iScreenHeight,
+  CDisplaySettings::GetInstance().GetCurrentResolutionInfo().bFullScreen,
+  m_streamInfo.bitsperpixel);
 
   /* register render & display callback */
-  //g_renderManager.RegisterRenderUpdateCallBack((const void*)this, RenderUpdateCallBack);
+  g_renderManager.RegisterRenderUpdateCallBack((const void*)this, RenderUpdateCallBack);
   m_dll->RK_CodecRegisterListener((RK_ENV)this, RK_RENDER, OnDisplayEvent);
 
   /* create thread process */\
@@ -272,15 +287,13 @@ bool CRKCodec::IsEOS()
 {
   return true;
   if (m_bReady && m_bSubmittedEos)
-  {
     return m_displayInfo.eos > 0;
-  }
   return false;
 }
 
 void CRKCodec::SetSpeed(int speed)
 {
-  if (m_bReady)
+  if (m_bReady && m_dll)
   {
     CLog::Log(LOGDEBUG, "%s: SetSpeed speed= %d!", __MODULE_NAME__, speed);
     switch (speed)
@@ -308,4 +321,24 @@ void CRKCodec::SendCommand(RK_U32 cmd, RK_PTR param)
   }
 }
 
+void CRKCodec::RenderUpdateCallBack(const void *ctx, const CRect &SrcRect, const CRect &DestRect)
+{
+  if (ctx)
+    ((CRKCodec*)ctx)->UpdateRenderRect(SrcRect,DestRect);
+}
+
+void CRKCodec::UpdateRenderRect(const CRect &SrcRect, const CRect &DestRect)
+{
+  if (m_displayResolution != DestRect)
+  {  
+    CLog::Log(LOGDEBUG,"%s: UpdateRenderRect", __MODULE_NAME__);
+    m_displayResolution = DestRect;
+    int* dst = new int[4];
+    dst[0] = m_displayResolution.x1;
+    dst[1] = m_displayResolution.y1;
+    dst[2] = m_displayResolution.x2 - m_displayResolution.x1;
+    dst[3] = m_displayResolution.y2 - m_displayResolution.y1;
+    SendCommand(RK_CMD_SETRES, dst);
+  }
+}
 

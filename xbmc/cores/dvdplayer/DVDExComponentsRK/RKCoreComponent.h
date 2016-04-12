@@ -23,6 +23,9 @@
 #include "cores/dvdplayer/DVDStreamInfo.h"
 #include "threads/Thread.h"
 #include "threads/CriticalSection.h"
+#include "guilib/Geometry.h"
+
+#define RK_LIBRARY "librkffplayer.so"
 
 typedef unsigned char           RK_U8;
 typedef unsigned short          RK_U16;
@@ -54,7 +57,7 @@ public:
 
 class DllLibRKCodec : public DllDynamic, DllLibRKCodecInterface
 {
-  DECLARE_DLL_WRAPPER(DllLibRKCodec, "librkffplayer.so");
+  DECLARE_DLL_WRAPPER(DllLibRKCodec, RK_LIBRARY);
 
   DEFINE_METHOD1(RK_RET, RK_CodecInit, (RK_PTR p1));
   DEFINE_METHOD0(RK_RET, RK_CodecOpen);
@@ -98,7 +101,8 @@ enum RKCodecCommand
 {
   RK_CMD_SETSPEED        = 1,
   RK_CMD_SYNC            = 2,
-  RK_CMD_EOS             = 3
+  RK_CMD_EOS             = 3,
+  RK_CMD_SETRES          = 4
 };
 
 enum RKDecodeRetStatus
@@ -178,11 +182,14 @@ public:
 protected:
   virtual void  Process();
   void UpdatePlayStatus();
-
+  static void RenderUpdateCallBack(const void *ctx, const CRect &SrcRect, const CRect &DestRect);
+  void UpdateRenderRect(const CRect &SrcRect, const CRect &DestRect);
+  
 private:
   CDVDStreamInfo  m_hints;
   RKCodecStreamInfo m_streamInfo;
   RKCodecDisplayInfo m_displayInfo;
+  CRect m_displayResolution;
   DllLibRKCodec *m_dll;
   bool m_bLoad;
   bool m_bReady;

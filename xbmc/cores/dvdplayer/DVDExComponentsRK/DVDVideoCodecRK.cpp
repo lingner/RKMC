@@ -33,7 +33,8 @@ CDVDVideoCodecRK::CDVDVideoCodecRK() :
   m_pFormatName("RKCodec"),
   m_bOpened(false),
   m_lfDecodePts(0.0),
-  m_lfDisplayPts(0.0)
+  m_lfDisplayPts(0.0),
+  m_pCodec(NULL)
 {
 }
 

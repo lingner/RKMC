@@ -83,6 +83,7 @@
 #include "DVDPlayerAudio.h"
 
 #include "DVDExComponentsRK/DVDPlayerVideoRK.h"
+#include "DVDExComponentsRK/DVDDemuxFFmpegRK.h"
 
 using namespace PVR;
 using namespace KODI::MESSAGING;
@@ -819,7 +820,11 @@ bool CDVDPlayer::OpenDemuxStream()
     int attempts = 10;
     while(!m_bStop && attempts-- > 0)
     {
-      m_pDemuxer = CDVDFactoryDemuxer::CreateDemuxer(m_pInputStream);
+      std::unique_ptr<CDVDDemuxFFmpegRK> demuxer(new CDVDDemuxFFmpegRK());
+      if(demuxer->Open(m_pInputStream))
+        m_pDemuxer = demuxer.release();
+      if (m_pDemuxer == NULL)
+        m_pDemuxer = CDVDFactoryDemuxer::CreateDemuxer(m_pInputStream);
       if(!m_pDemuxer && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER))
       {
         continue;

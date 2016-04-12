@@ -19,13 +19,15 @@
  */
 #include "settings/MediaSettings.h"
 #include "settings/AdvancedSettings.h"
+#include "video/VideoReferenceClock.h"
 #include "DVDPlayerVideoRK.h"
-#include "../DVDPlayer.h"
-#include "../DVDPlayerVideo.h"
-#include "../DVDCodecs/DVDFactoryCodec.h"
-#include "../DVDCodecs/DVDCodecUtils.h"
-#include "../DVDCodecs/Video/DVDVideoPPFFmpeg.h"
-#include "../DVDCodecs/Video/DVDVideoCodecFFmpeg.h"
+#include "DVDVideoCodecRK.h"
+#include "cores/dvdplayer/DVDPlayer.h"
+#include "cores/dvdplayer/DVDPlayerVideo.h"
+#include "cores/dvdplayer/DVDCodecs/DVDFactoryCodec.h"
+#include "cores/dvdplayer/DVDCodecs/DVDCodecUtils.h"
+#include "cores/dvdplayer/DVDCodecs/Video/DVDVideoPPFFmpeg.h"
+#include "cores/dvdplayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h"
 #include "utils/log.h"
 
 class CPulldownCorrection
@@ -105,6 +107,91 @@ CDVDPlayerVideoRK::CDVDPlayerVideoRK( CDVDClock* pClock
 : CDVDPlayerVideo(pClock, pOverlayContainer, parent)
 {
 
+}
+
+CDVDPlayerVideoRK::~CDVDPlayerVideoRK()
+{
+
+}
+
+CDVDVideoCodec* CDVDPlayerVideoRK::OpenCodec(CDVDVideoCodec* pCodec, CDVDStreamInfo &hints, CDVDCodecOptions &options )
+{
+  try
+  {
+    CLog::Log(LOGDEBUG, "CDVDPlayerVideoRK - Video: %s - Opening", pCodec->GetName());
+    if( pCodec->Open( hints, options ) )
+    {
+      CLog::Log(LOGDEBUG, "CDVDPlayerVideoRK - Video: %s - Opened", pCodec->GetName());
+      return pCodec;
+    }
+
+    CLog::Log(LOGDEBUG, "CDVDPlayerVideoRK - Video: %s - Failed", pCodec->GetName());
+    pCodec->Dispose();
+    delete pCodec;
+  }
+  catch(...)
+  {
+    CLog::Log(LOGERROR, "CDVDPlayerVideoRK - Video: Failed with exception");
+  }
+  return NULL;
+}
+
+
+CDVDVideoCodec* CDVDPlayerVideoRK::CreateVideoCodec(CDVDStreamInfo &hint, const CRenderInfo &info)
+{
+  CDVDVideoCodec* pCodec = NULL;
+  CDVDCodecOptions options;
+  
+  if(info.formats.empty())
+    options.m_formats.push_back(RENDER_FMT_YUV420P);
+  else
+    options.m_formats = info.formats;
+
+  options.m_opaque_pointer = info.opaque_pointer;
+  
+  if( (pCodec = OpenCodec(new CDVDVideoCodecRK(), hint, options)) ) return pCodec;
+  if( (pCodec = OpenCodec(new CDVDVideoCodecFFmpeg(), hint, options)) ) return pCodec;
+
+  return NULL;
+}
+
+bool CDVDPlayerVideoRK::OpenStream( CDVDStreamInfo &hint )
+{
+  CRenderInfo info;
+  #ifdef HAS_VIDEO_PLAYBACK
+  info = g_renderManager.GetRenderInfo();
+  #endif
+
+  m_pullupCorrection.ResetVFRDetection();
+  if(hint.flags & AV_DISPOSITION_ATTACHED_PIC)
+    return false;
+
+  if (m_pVideoCodec)
+  {
+    delete m_pVideoCodec;
+    m_pVideoCodec = NULL;
+  }
+
+  CLog::Log(LOGNOTICE, "Creating video codec with codec id: %i", hint.codec);
+  CDVDVideoCodec* codec = CreateVideoCodec(hint, info);
+  if(!codec)
+  {
+    CLog::Log(LOGERROR, "Unsupported video codec");
+    return false;
+  }
+
+  g_VideoReferenceClock.Start();
+
+  if(m_messageQueue.IsInited())
+    m_messageQueue.Put(new CDVDMsgVideoCodecChange(hint, codec), 0);
+  else
+  {
+    CDVDPlayerVideo::OpenStream(hint, codec);
+    CLog::Log(LOGNOTICE, "Creating video thread");
+    m_messageQueue.Init();
+    Create();
+  }
+  return true;
 }
 
 void CDVDPlayerVideoRK::Process()
@@ -298,7 +385,7 @@ void CDVDPlayerVideoRK::Process()
     else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
     {
       CDVDMsgVideoCodecChange* msg(static_cast<CDVDMsgVideoCodecChange*>(pMsg));
-      OpenStream(msg->m_hints, msg->m_codec);
+      CDVDPlayerVideo::OpenStream(msg->m_hints, msg->m_codec);
       msg->m_codec = NULL;
       picture.iFlags &= ~DVP_FLAG_ALLOCATED;
     }

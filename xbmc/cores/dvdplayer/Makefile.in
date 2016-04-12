@@ -19,6 +19,8 @@ SRCS += DVDTSCorrection.cpp
 SRCS += Edl.cpp
 
 SRCS += DVDExComponentsRK/DVDPlayerVideoRK.cpp 
+SRCS += DVDExComponentsRK/DVDVideoCodecRK.cpp
+SRCS += DVDExComponentsRK/RKCoreComponent.cpp
 
 LIB = DVDPlayer.a
 

@@ -82,6 +82,8 @@
 #endif
 #include "DVDPlayerAudio.h"
 
+#include "DVDExComponentsRK/DVDPlayerVideoRK.h"
+
 using namespace PVR;
 using namespace KODI::MESSAGING;
 
@@ -555,7 +557,7 @@ void CDVDPlayer::CreatePlayers()
   }
   else
   {
-    m_dvdPlayerVideo = new CDVDPlayerVideo(&m_clock, &m_overlayContainer, m_messenger);
+    m_dvdPlayerVideo = new CDVDPlayerVideoRK(&m_clock, &m_overlayContainer, m_messenger);
     m_dvdPlayerAudio = new CDVDPlayerAudio(&m_clock, m_messenger);
   }
   m_dvdPlayerSubtitle = new CDVDPlayerSubtitle(&m_overlayContainer);

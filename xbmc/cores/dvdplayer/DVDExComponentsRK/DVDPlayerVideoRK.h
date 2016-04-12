@@ -20,7 +20,7 @@
  *
  */
 
-#include "../DVDPlayerVideo.h"
+#include "cores/dvdplayer/DVDPlayerVideo.h"
 
 #define VC_BYPASS  0x00000100
 
@@ -32,9 +32,14 @@ public:
 				 , CDVDMessageQueue& parent);
   virtual ~CDVDPlayerVideoRK();
 
+  bool OpenStream(CDVDStreamInfo &hint);
+
 protected:
   virtual void Process();
 
+private:
+  CDVDVideoCodec* CreateVideoCodec(CDVDStreamInfo &hint, const CRenderInfo &info);
+  CDVDVideoCodec* OpenCodec(CDVDVideoCodec* pCodec, CDVDStreamInfo &hints, CDVDCodecOptions &options);
 };
 
 

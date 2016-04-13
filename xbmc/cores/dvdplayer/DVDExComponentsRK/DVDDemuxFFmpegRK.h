@@ -32,6 +32,11 @@ public:
   CDVDDemuxFFmpegRK();
   virtual ~CDVDDemuxFFmpegRK();
   virtual DemuxPacket* Read();
+  bool Open(CDVDInputStream* pInput, bool streaminfo = true, bool fileinfo = false);
+
+protected:
+  CDemuxStream* AddStream(int iId);
+  void CreateStreams(unsigned int program = UINT_MAX);
 
 private:
   bool m_bSSIF;

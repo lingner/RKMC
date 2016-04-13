@@ -88,6 +88,25 @@ bool CGUIDialogSimpleMenu::ShowPlaySelection(CFileItem& item, const std::string&
     CLog::Log(LOGERROR, "CGUIWindowVideoBase::ShowPlaySelection - Failed to get play directory for %s", directory.c_str());
     return true;
   }
+  
+  CURL url3("udf://");
+  url3.SetHostName(item.GetPath());
+  url3.SetFileName("BDMV/STREAM/SSIF");
+  CFileItemList _3ditems;
+  XFILE::CDirectory::GetDirectory(url3, _3ditems, XFILE::CDirectory::CHints(), true);
+  if (!_3ditems.IsEmpty())
+  {
+    _3ditems.Sort(SortByTrackNumber,  SortOrderDescending);
+    _3ditems.Sort(SortBySize, SortOrderDescending);
+    CFileItemPtr _3ditem(new CFileItem("", false));
+    _3ditem->SetPath(_3ditems[0]->GetPath());
+    _3ditem->m_bIsFolder = false;
+    _3ditem->m_strTitle = "Play in 3D mode";
+    _3ditem->SetLabel("Play in 3D mode");
+    _3ditem->SetIconImage("DefaultVideo.png");
+    items.Add(_3ditem);
+  }
+  _3ditems.Clear();
 
   if (items.IsEmpty())
   {
@@ -127,6 +146,6 @@ bool CGUIDialogSimpleMenu::ShowPlaySelection(CFileItem& item, const std::string&
       break;
     }
   }
-
+  items.Clear();
   return false;
 }

@@ -277,6 +277,13 @@ CPoint CGraphicContext::StereoCorrection(const CPoint &point) const
     if(m_stereoView == RENDER_STEREO_VIEW_RIGHT)
       res.x += info.iWidth  + info.iBlanking;
   }
+  if(m_stereoMode == RENDER_STEREO_MODE_MVC)
+  {
+    const RESOLUTION_INFO info = GetResInfo();
+
+    if(m_stereoView == RENDER_STEREO_VIEW_RIGHT)
+      res.y += info.iHeight + info.iBlanking;
+  }
   return res;
 }
 
@@ -734,6 +741,19 @@ const RESOLUTION_INFO CGraphicContext::GetResInfo(RESOLUTION res) const
     info.iWidth           = (info.iWidth         - info.iBlanking) / 2;
     info.Overscan.left   /= 2;
     info.Overscan.right   = (info.Overscan.right - info.iBlanking) / 2;
+  }
+
+  if(m_stereoMode == RENDER_STEREO_MODE_MVC)
+  {
+    info.iBlanking = 0.0;
+    if(info.iScreenHeight == 1080)
+      info.iBlanking = 45.0 * info.iHeight / info.iScreenHeight / 2;
+    if(info.iScreenHeight == 720)
+      info.iBlanking = 30.0 * info.iHeight / info.iScreenHeight / 2;
+    info.iHeight          = (info.iHeight         - info.iBlanking) / 2;
+    info.Overscan.top    /= 2;
+    info.Overscan.bottom  = (info.Overscan.bottom - info.iBlanking) / 2;
+    info.iSubtitles       = (info.iSubtitles      - info.iBlanking) / 2;
   }
 
   if (res == m_Resolution && m_fFPSOverride != 0)

@@ -72,6 +72,7 @@ static const struct StereoModeMap VideoModeToGuiModeMap[] =
   { "anaglyph_yellow_blue",     RENDER_STEREO_MODE_ANAGLYPH_YELLOW_BLUE },
   { "block_lr",                 RENDER_STEREO_MODE_OFF }, // unsupported
   { "block_rl",                 RENDER_STEREO_MODE_OFF }, // unsupported
+  { "mvc",                      RENDER_STEREO_MODE_MVC },
   {}
 };
 
@@ -91,6 +92,7 @@ static const struct StereoModeMap StringToGuiModeMap[] =
   { "anaglyph_green_magenta",   RENDER_STEREO_MODE_ANAGLYPH_GREEN_MAGENTA },
   { "anaglyph_yellow_blue",     RENDER_STEREO_MODE_ANAGLYPH_YELLOW_BLUE },
   { "hardware_based",           RENDER_STEREO_MODE_HARDWAREBASED },
+  { "mvc",                      RENDER_STEREO_MODE_MVC },
   { "monoscopic",               RENDER_STEREO_MODE_MONO },
   {}
 };
@@ -289,6 +291,9 @@ const std::string &CStereoscopicsManager::GetLabelForStereoMode(const RENDER_STE
     case RENDER_STEREO_MODE_MONO:
 	  msgId = 36509;
 	  break;
+    case RENDER_STEREO_MODE_MVC:
+      msgId = 36512;
+      break;
     default:
 	  msgId = 36502 + mode;
   }

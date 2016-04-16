@@ -944,6 +944,7 @@ std::string CDVDPlayerVideo::GetStereoMode()
   {
     case RENDER_STEREO_MODE_SPLIT_VERTICAL:   stereo_mode = "left_right"; break;
     case RENDER_STEREO_MODE_SPLIT_HORIZONTAL: stereo_mode = "top_bottom"; break;
+    case RENDER_STEREO_MODE_MVC:              stereo_mode = "mvc"; break;
     default:                                  stereo_mode = m_hints.stereo_mode; break;
   }
 

@@ -360,6 +360,7 @@ void CGUIDialogVideoSettings::InitializeSettings()
   entries.push_back(std::make_pair(16316, RENDER_STEREO_MODE_OFF));
   entries.push_back(std::make_pair(36503, RENDER_STEREO_MODE_SPLIT_HORIZONTAL));
   entries.push_back(std::make_pair(36504, RENDER_STEREO_MODE_SPLIT_VERTICAL));
+  entries.push_back(std::make_pair(36512, RENDER_STEREO_MODE_MVC));
   AddSpinner(groupStereoscopic, SETTING_VIDEO_STEREOSCOPICMODE  , 36535, 0, videoSettings.m_StereoMode, entries);
   AddToggle(groupStereoscopic, SETTING_VIDEO_STEREOSCOPICINVERT, 36536, 0, videoSettings.m_StereoInvert);
 
